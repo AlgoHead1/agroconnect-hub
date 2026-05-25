@@ -1,0 +1,320 @@
+Project: AgroLinkAfrica
+
+IMPORTANT:
+Do NOT redesign the app.
+Do NOT add major new features.
+Do NOT introduce architectural bloat.
+Do NOT change existing routing architecture.
+Do NOT break working workflows.
+
+Focus ONLY on:
+- operational hardening,
+- deployment readiness,
+- workflow consistency,
+- cleanup,
+- stabilization.
+
+Keep implementation:
+- lean,
+- surgical,
+- production-oriented,
+- government/NGO-grade.
+
+====================================================
+PRIMARY OBJECTIVE
+====================================================
+
+Finalize AgroLinkAfrica for stable Vercel deployment and professional demo readiness.
+
+====================================================
+IMPLEMENT ONLY THESE TASKS
+====================================================
+
+1. Resolve duplicate workflows
+2. Remove placeholders
+3. Remove dead/unused UI
+4. Improve RBAC enforcement
+5. Operationalize GIS page
+6. Improve dashboard contextualization
+7. Validate audit/accountability workflows
+8. Improve loading states
+9. Clean documentation
+10. Validate smoke tests
+11. Improve deployment polish
+12. Fix risky SSR/hydration issues
+
+====================================================
+TASK 1 — FARMER WORKFLOW CLEANUP
+====================================================
+
+Inspect:
+- farmers.new.tsx
+- farmers.simple.tsx
+
+Avoid duplicate farmer registration workflows.
+
+Preferred:
+- keep ONE primary registration workflow
+
+If farmers.simple.tsx is redundant:
+- remove safely
+
+If retained:
+- convert into lightweight quick-register flow
+
+Requirements:
+- no duplicated logic
+- no duplicated validation
+- no conflicting state behavior
+
+====================================================
+TASK 2 — REMOVE PLACEHOLDERS
+====================================================
+
+Inspect:
+- module-placeholder.tsx
+- empty-state.tsx
+- dashboard widgets
+- reports
+- GIS
+- warehouse pages
+
+Remove:
+- lorem ipsum
+- fake analytics
+- placeholder cards
+- dead tabs
+- unused widgets
+- generic “No data available”
+
+Replace with operational messaging.
+
+GOOD:
+- “No approved allocations for this ward.”
+- “No registered farmers in this village.”
+- “No pending warehouse collections.”
+
+====================================================
+TASK 3 — GIS PAGE OPERATIONALIZATION
+====================================================
+
+Inspect:
+gis.tsx
+
+Do NOT implement fake maps.
+
+Instead:
+- rename internally as Geographic Coverage Overview
+- show:
+  - province summaries
+  - district summaries
+  - ward coverage
+  - allocation totals
+  - household counts
+  - vulnerability summaries
+
+Keep implementation lightweight.
+
+====================================================
+TASK 4 — REAL RBAC ENFORCEMENT
+====================================================
+
+Validate:
+- roles.ts
+- permissions.ts
+- route-guards.ts
+- sidebar-config.ts
+
+Ensure:
+unauthorized users CANNOT manually access restricted routes.
+
+Examples:
+- farmer cannot access /users
+- farmer cannot access /settings
+- warehouse manager cannot access super admin routes
+
+IMPORTANT:
+Do NOT rely only on hidden sidebar links.
+
+====================================================
+TASK 5 — DASHBOARD CONTEXTUALIZATION
+====================================================
+
+Inspect:
+dashboard-widgets.tsx
+
+Ensure dashboards differ by role.
+
+====================================================
+ROLE EXAMPLES
+====================================================
+
+farmer:
+- allocations
+- QR collection info
+- vulnerability info
+
+warehouse_manager:
+- stock
+- collections
+- warehouse accountability
+
+district_officer:
+- farmer registry
+- allocations
+- approvals
+
+ngo_partner:
+- transparency metrics
+- vulnerability analytics
+- impact summaries
+
+====================================================
+TASK 6 — AUDIT WORKFLOW VALIDATION
+====================================================
+
+Inspect:
+- audit-utils.ts
+- audit-timeline.tsx
+- accountability-card.tsx
+
+Ensure:
+- audit records append correctly
+- timestamps work
+- accountability timelines render correctly
+- status progression works
+- records persist during session
+
+====================================================
+TASK 7 — LOADING STATE REFINEMENT
+====================================================
+
+Use:
+skeleton.tsx
+
+Ensure loading states exist for:
+- onboarding
+- login
+- dashboard switching
+- farmer registration
+- allocation updates
+
+Keep lightweight.
+
+====================================================
+TASK 8 — DOCUMENTATION CLEANUP
+====================================================
+
+Refine:
+- FEATURE_QUICK_REFERENCE.md
+- IMPLEMENTATION_SUMMARY.md
+
+Ensure docs:
+- reflect ONLY implemented features
+- avoid AI-generated verbosity
+- avoid inflated claims
+- read professionally
+
+====================================================
+TASK 9 — DEPLOYMENT POLISH
+====================================================
+
+Ensure:
+- favicon exists
+- branding polished
+- no broken assets
+- no dead routes
+- no broken imports
+
+====================================================
+TASK 10 — SMOKE TEST VALIDATION
+====================================================
+
+Inspect:
+scripts/smoke-test.ts
+
+Validate:
+- route rendering
+- auth flow
+- role routing
+- farmer registration
+- allocation workflow
+- dashboard rendering
+
+====================================================
+TASK 11 — SSR & HYDRATION STABILITY
+====================================================
+
+Inspect:
+- __root.tsx
+- auth.ts
+- app-sidebar.tsx
+
+Prevent:
+- unstable SSR rendering
+- hydration mismatch causes
+- undefined auth rendering
+- unstable client/server divergence
+
+Ignore Grammarly extension warnings.
+
+====================================================
+TASK 12 — PRODUCTION VALIDATION
+====================================================
+
+Ensure:
+- npm run dev works
+- npm run build succeeds
+- npm run preview succeeds
+
+Fix:
+- console errors
+- route crashes
+- blank pages
+- hydration crashes
+- infinite redirects
+
+====================================================
+IMPORTANT IMPLEMENTATION RULES
+====================================================
+
+1. Reuse existing architecture
+2. Reuse existing stores
+3. Reuse existing routing
+4. Avoid unnecessary files
+5. Avoid overengineering
+6. Preserve working workflows
+7. Keep implementation lean
+8. Maintain operational realism
+
+====================================================
+DO NOT IMPLEMENT
+====================================================
+
+Do NOT add:
+- backend APIs
+- Supabase
+- PostgreSQL
+- advanced GIS
+- AI systems
+- offline sync
+- notifications
+- blockchain
+- advanced analytics engines
+
+====================================================
+FINAL EXPECTATION
+====================================================
+
+At completion:
+- duplicate workflows resolved
+- placeholders removed
+- GIS operationalized
+- RBAC properly enforced
+- dashboards role-aware
+- audit workflows stable
+- loading states polished
+- documentation professional
+- SSR stable
+- app deployment-ready
+- no architectural bloat introduced

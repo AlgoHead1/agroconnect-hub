@@ -1,0 +1,1 @@
+- [AgroLinkAfrica Vercel conversion](agrolink-africa-vercel.md) — TanStack Start → Vite SPA; project in /workspace/agrolink-africa/
