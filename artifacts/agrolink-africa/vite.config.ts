@@ -15,6 +15,8 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   server: {
+    port: Number(process.env.PORT) || 5174,
+    host: true,
     allowedHosts: true,
   },
   build: {

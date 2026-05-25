@@ -1,0 +1,23 @@
+kind = "web"
+previewPath = "/"
+title = "AgroLinkAfrica"
+version = "1.0.0"
+
+[[services]]
+localPort = 5174
+name = "web"
+paths = ["/"]
+
+[services.env]
+PORT = "5174"
+
+[services.development]
+run = "pnpm --filter @workspace/agrolink-africa run dev"
+
+[services.production]
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/agrolink-africa", "run", "build"]
+
+[services.production.build.env]
+NODE_ENV = "production"

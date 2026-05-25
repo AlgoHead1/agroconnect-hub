@@ -1,5 +1,5 @@
 {
-  "name": "agrolink-africa",
+  "name": "@workspace/agrolink-africa",
   "private": true,
   "type": "module",
   "scripts": {
