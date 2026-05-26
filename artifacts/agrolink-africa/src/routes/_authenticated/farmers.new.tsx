@@ -172,6 +172,10 @@ function NewFarmerPage() {
       
       const farmer = addFarmer({
         ...data,
+        gpsLat: data.gpsLat ? parseFloat(data.gpsLat) : undefined,
+        gpsLng: data.gpsLng ? parseFloat(data.gpsLng) : undefined,
+        crops: data.crops as any,
+        livestock: (data.livestock || []) as any,
         vulnerabilityTags: (data.vulnerabilityTags || []) as VulnerabilityTag[],
       });
 
@@ -196,6 +200,10 @@ function NewFarmerPage() {
       const data = watch() as FormValues;
       const farmer = addFarmer({
         ...data,
+        gpsLat: data.gpsLat ? parseFloat(data.gpsLat) : undefined,
+        gpsLng: data.gpsLng ? parseFloat(data.gpsLng) : undefined,
+        crops: data.crops as any,
+        livestock: (data.livestock || []) as any,
         vulnerabilityTags: (data.vulnerabilityTags || []) as VulnerabilityTag[],
       });
       toast.warning("Farmer registered (duplicate detected)");
@@ -417,13 +425,15 @@ function NewFarmerPage() {
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div>
-              <Label className="mb-2 block">Crops</Label>
+              <Label className="mb-2 block">
+                Crops <span className="text-destructive">*</span>
+              </Label>
 
               <div className="grid grid-cols-2 gap-2">
                 {cropOptions.map((crop) => (
                   <label
                     key={crop}
-                    className="flex items-center gap-2 rounded-md border p-3"
+                    className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40"
                   >
                     <Checkbox
                       checked={selectedCrops.includes(crop)}
@@ -440,6 +450,9 @@ function NewFarmerPage() {
                   </label>
                 ))}
               </div>
+              {errors.crops && (
+                <p className="mt-2 text-sm text-destructive">{errors.crops.message as string}</p>
+              )}
             </div>
 
             <div>
