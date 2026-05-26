@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VulnerabilityTags } from "@/components/ui/vulnerability-tags";
 import { AuditTimeline } from "@/components/ui/audit-timeline";
-import { AccountabilityCard } from "@/components/ui/accountability-card";
 import { useFarmers } from "@/store/farmers";
 import { useDistributions } from "@/store/distributions";
 import { useWarehouses } from "@/store/warehouses";

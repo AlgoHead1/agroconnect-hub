@@ -172,6 +172,7 @@ function NewFarmerPage() {
       
       const farmer = addFarmer({
         ...data,
+        householdId: data.householdId || undefined,
         gpsLat: data.gpsLat ? parseFloat(data.gpsLat) : undefined,
         gpsLng: data.gpsLng ? parseFloat(data.gpsLng) : undefined,
         crops: data.crops as any,
@@ -200,6 +201,7 @@ function NewFarmerPage() {
       const data = watch() as FormValues;
       const farmer = addFarmer({
         ...data,
+        householdId: data.householdId || undefined,
         gpsLat: data.gpsLat ? parseFloat(data.gpsLat) : undefined,
         gpsLng: data.gpsLng ? parseFloat(data.gpsLng) : undefined,
         crops: data.crops as any,
@@ -319,14 +321,13 @@ function NewFarmerPage() {
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Province" error={errors.provinceId?.message}>
               <select
-                {...register("provinceId")}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setValue("provinceId", value, { shouldValidate: true });
-                  setValue("districtId", "");
-                  setValue("wardId", "");
-                  setValue("villageId", "");
-                }}
+                {...register("provinceId", {
+                  onChange: () => {
+                    setValue("districtId", "");
+                    setValue("wardId", "");
+                    setValue("villageId", "");
+                  },
+                })}
                 className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
               >
                 <option value="">Select province</option>
@@ -340,14 +341,13 @@ function NewFarmerPage() {
 
             <Field label="District" error={errors.districtId?.message}>
               <select
-                {...register("districtId")}
+                {...register("districtId", {
+                  onChange: () => {
+                    setValue("wardId", "");
+                    setValue("villageId", "");
+                  },
+                })}
                 disabled={!provinceId}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setValue("districtId", value, { shouldValidate: true });
-                  setValue("wardId", "");
-                  setValue("villageId", "");
-                }}
                 className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm disabled:opacity-50"
               >
                 <option value="">Select district</option>
@@ -361,13 +361,12 @@ function NewFarmerPage() {
 
             <Field label="Ward" error={errors.wardId?.message}>
               <select
-                {...register("wardId")}
+                {...register("wardId", {
+                  onChange: () => {
+                    setValue("villageId", "");
+                  },
+                })}
                 disabled={!districtId}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setValue("wardId", value, { shouldValidate: true });
-                  setValue("villageId", "");
-                }}
                 className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm disabled:opacity-50"
               >
                 <option value="">Select ward</option>
@@ -383,7 +382,6 @@ function NewFarmerPage() {
               <select
                 {...register("villageId")}
                 disabled={!wardId}
-                onChange={(e) => setValue("villageId", e.target.value, { shouldValidate: true })}
                 className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm disabled:opacity-50"
               >
                 <option value="">Select village</option>
