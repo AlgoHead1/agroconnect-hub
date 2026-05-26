@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -190,7 +190,10 @@ function NewHouseholdDialog({ onCreate }: { onCreate: (h: Parameters<ReturnType<
 
   return (
     <DialogContent className="max-w-lg">
-      <DialogHeader><DialogTitle>Register new household</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>Register new household</DialogTitle>
+        <DialogDescription>Link a registered farmer as head of household and set the vulnerability category.</DialogDescription>
+      </DialogHeader>
       <div className="grid gap-4 py-2">
         <div className="grid gap-1.5">
           <Label>Head of household</Label>

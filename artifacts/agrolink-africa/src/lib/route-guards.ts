@@ -37,7 +37,11 @@ export function canAccessRoute(
   role: UserRole,
   path: string,
 ): { allowed: boolean; redirectTo?: string } {
-  const route = PROTECTED_ROUTES.find((r) => path.startsWith(r.path));
+  // Sort by descending specificity (longer paths first) so /farmers/new is
+  // matched before /farmers when both would match via startsWith.
+  const route = [...PROTECTED_ROUTES]
+    .sort((a, b) => b.path.length - a.path.length)
+    .find((r) => path === r.path || path.startsWith(r.path + "/") || path.startsWith(r.path));
   
   if (!route) {
     // Route not in protected list, allow by default

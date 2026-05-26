@@ -13,7 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useWarehouses } from "@/store/warehouses";
@@ -228,7 +228,10 @@ function StockMovementDialog({
 
   return (
     <DialogContent>
-      <DialogHeader><DialogTitle>Record stock movement</DialogTitle></DialogHeader>
+      <DialogHeader>
+        <DialogTitle>Record stock movement</DialogTitle>
+        <DialogDescription>Record an inbound or outbound stock movement for the selected warehouse and input item.</DialogDescription>
+      </DialogHeader>
       <div className="grid gap-4 py-2">
         <div className="grid gap-1.5">
           <Label>Warehouse</Label>
