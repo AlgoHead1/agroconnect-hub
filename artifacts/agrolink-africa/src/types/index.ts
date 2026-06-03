@@ -36,6 +36,9 @@ export type VulnerabilityTag =
   | "Climate-affected"
   | "Child-headed household";
 
+export type IrrigationAccess = "None" | "Rainfed" | "Borehole" | "River" | "Dam" | "Drip" | "Pivot";
+export type LandOwnershipType = "Own" | "Leased" | "Communal" | "Sharecrop" | "Rented" | "Inherited";
+
 export interface Farmer {
   id: string;
   farmerCode: string; // FARM-ZW-XXXXXX
@@ -52,9 +55,22 @@ export interface Farmer {
   householdId?: string;
   gpsLat?: number;
   gpsLng?: number;
+
+  // Farm & Production Profile
   farmSizeHa: number;
+  landOwnershipType?: LandOwnershipType;
+  irrigationAccess?: IrrigationAccess;
   crops: Crop[];
   livestock: Livestock[];
+
+  // Household Profile
+  householdSize?: number; // Total people in household
+  dependentsUnder18?: number; // Children under 18
+  dependentsOver60?: number; // Elderly dependents
+  femaleHeadedHousehold?: boolean; // Female-headed indicator
+  youthHeadedHousehold?: boolean; // Youth (18-35) headed indicator
+
+  // Additional fields
   vulnerabilityTags?: VulnerabilityTag[];
   profilePhotoUrl?: string;
   registeredAt: string;
@@ -142,6 +158,18 @@ export interface Allocation {
   collectedBy?: string;
   auditHistory?: AllocationAuditEntry[];
   qrCode?: string; // Encoded allocation data
+
+  // Program participation
+  programId?: string;
+  programName?: string;
+  programCode?: string;
+  fundingSource?: string;
+  implementingPartner?: string;
+  assignedOfficerId?: string; // Extension officer
+
+  // Receipt generation
+  receiptNumber?: string;
+  receiptStatus?: ReceiptStatus;
 }
 
 export interface AllocationAuditEntry {
@@ -167,4 +195,87 @@ export interface WarehouseStock {
   inputId: string;
   quantity: number;
   lastUpdated: string;
+}
+
+// Program/Campaign extension for allocations
+export type EligibilityStatus = "Eligible" | "Waitlisted" | "Not Eligible";
+export type DeliveryMethod = "SMS" | "WhatsApp" | "Email" | "Print";
+export type ReceiptStatus = "Pending" | "Acknowledged";
+
+export interface Program {
+  id: string;
+  programName: string;
+  programCode: string;
+  fundingSource: string;
+  implementingPartner?: string;
+  startDate?: string; // ISO
+  endDate?: string; // ISO
+  season?: string;
+  status?: "Active" | "Completed" | "Paused";
+}
+
+export interface ExtensionOfficer {
+  id: string;
+  name: string;
+  phone?: string;
+  districtId: string;
+  wardId?: string;
+}
+
+// Program participation tracking
+export interface ProgramParticipation {
+  id: string;
+  farmerId: string;
+  programId?: string;
+  programName: string;
+  programCode: string;
+  fundingSource: string;
+  implementingPartner?: string;
+  assignedOfficerId?: string;
+  startDate?: string; // ISO
+  endDate?: string; // ISO
+  season?: string;
+  eligibilityStatus: EligibilityStatus;
+  eligibilityScore?: number; // 0-100, optional computed score
+  enrolledDate: string; // ISO
+}
+
+// Receipt & Acknowledgement for items issued
+export interface Receipt {
+  id: string;
+  receiptNumber: string; // Format: RCP-YYYY-XXXXXX
+  date: string; // ISO
+  beneficiaryId: string; // Farmer ID
+  programId?: string;
+  items: ReceiptItem[];
+  issuedBy: string; // User ID
+  deliveryMethod: DeliveryMethod;
+  estimatedTotalValue?: number;
+  status: ReceiptStatus;
+  acknowledgementData?: ReceiptAcknowledgement;
+  auditHistory?: ReceiptAuditEntry[];
+  createdAt: string; // ISO
+}
+
+export interface ReceiptItem {
+  inputId: string;
+  inputName: string;
+  quantity: number;
+  unit: string;
+  unitPrice?: number;
+}
+
+export interface ReceiptAcknowledgement {
+  acknowledgedBy: string; // Farmer or representative
+  acknowledgedAt: string; // ISO
+  acknowledgedVia: DeliveryMethod; // How was it acknowledged
+  message?: string; // Optional acknowledgement message/feedback
+}
+
+export interface ReceiptAuditEntry {
+  action: "created" | "sent" | "acknowledged" | "cancelled";
+  userId: string;
+  userName?: string;
+  timestamp: string;
+  notes?: string;
 }

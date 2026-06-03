@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, Printer, Sprout, MapPin, Phone, IdCard, Calendar, Wheat, PackageCheck, QrCode, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Printer, Sprout, MapPin, Phone, IdCard, Calendar, Wheat, PackageCheck, QrCode, CircleCheck as CheckCircle2, Hop as Home, Users, Droplet, Award } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,9 @@ import { useFarmers } from "@/store/farmers";
 import { useDistributions } from "@/store/distributions";
 import { useWarehouses } from "@/store/warehouses";
 import { useAuth } from "@/store/auth";
+import { usePrograms } from "@/store/programs";
 import { getProvince, getDistrict, getWard, getVillage } from "@/lib/zimbabwe-geo";
+import { calculateEligibility, getEligibilityColor, getEligibilityBgColor } from "@/lib/eligibility-rules";
 import { households, distributions, inputItems } from "@/lib/mock-data";
 import { format } from "date-fns";
 import type { AllocationStatus } from "@/types";
@@ -31,10 +33,16 @@ function FarmerProfile() {
   const farmer = useFarmers((s) => s.getById(farmerId));
   const { allocations, getAllocationsByFarmer } = useDistributions();
   const { inputs, warehouses } = useWarehouses();
+  const { getParticipationsByFarmer, getReceipt } = usePrograms();
   const user = useAuth((s) => s.user);
   const hasPermission = useAuth((s) => s.hasPermission);
-  
+
   if (!farmer) throw notFound();
+
+  // Calculate eligibility
+  const eligibility = calculateEligibility(farmer);
+  const programParticipations = getParticipationsByFarmer(farmer.id);
+  const receipts = usePrograms((s) => s.getReceiptsByFarmer(farmer.id));
 
   const household = households.find((h) => h.id === farmer.householdId);
   const farmerDistributions = distributions.filter((d) => d.farmerId === farmer.id);
@@ -141,6 +149,60 @@ function FarmerProfile() {
               </div>
             </div>
           )}
+
+          {/* Household Profile Section */}
+          {(farmer.householdSize || farmer.dependentsUnder18 || farmer.dependentsOver60 || farmer.femaleHeadedHousehold || farmer.youthHeadedHousehold) && (
+            <div>
+              <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-2"><Home className="h-4 w-4 text-primary" />Household Profile</h3>
+              <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-sm space-y-2">
+                {farmer.householdSize && <p><span className="text-muted-foreground">Household Size:</span> <span className="font-medium">{farmer.householdSize} people</span></p>}
+                {farmer.dependentsUnder18 && <p><span className="text-muted-foreground">Dependents Under 18:</span> <span className="font-medium">{farmer.dependentsUnder18}</span></p>}
+                {farmer.dependentsOver60 && <p><span className="text-muted-foreground">Dependents Over 60:</span> <span className="font-medium">{farmer.dependentsOver60}</span></p>}
+                {farmer.femaleHeadedHousehold && <p><Badge variant="secondary" className="text-[10px]">Female-headed Household</Badge></p>}
+                {farmer.youthHeadedHousehold && <p><Badge variant="secondary" className="text-[10px]">Youth-headed Household</Badge></p>}
+              </div>
+            </div>
+          )}
+
+          {/* Production Profile Section */}
+          {(farmer.landOwnershipType || farmer.irrigationAccess) && (
+            <div>
+              <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-2"><Droplet className="h-4 w-4 text-primary" />Production Profile</h3>
+              <div className="rounded-md border border-border bg-muted/30 px-4 py-3 text-sm space-y-2">
+                {farmer.landOwnershipType && <p><span className="text-muted-foreground">Land Ownership:</span> <span className="font-medium">{farmer.landOwnershipType}</span></p>}
+                {farmer.irrigationAccess && <p><span className="text-muted-foreground">Irrigation Access:</span> <span className="font-medium">{farmer.irrigationAccess}</span></p>}
+              </div>
+            </div>
+          )}
+
+          {/* Eligibility Profile Section */}
+          <div className={`border-2 rounded-lg p-4 ${getEligibilityBgColor(eligibility.status)}`}>
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-sm font-semibold flex items-center gap-1.5"><Award className="h-4 w-4" />Eligibility Status</h3>
+                <p className="text-xs text-muted-foreground mt-1">Program participation determination</p>
+              </div>
+              <div className="text-right">
+                <p className={`text-lg font-bold ${getEligibilityColor(eligibility.status)}`}>{eligibility.status}</p>
+                <p className="text-xs text-muted-foreground">Score: {eligibility.score}/100</p>
+              </div>
+            </div>
+            <div className="mt-3 space-y-1">
+              {eligibility.reasons.length > 0 && (
+                <>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">Scoring factors:</p>
+                  <ul className="text-xs space-y-0.5">
+                    {eligibility.reasons.map((reason, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="mt-0.5 text-primary">•</span>
+                        <span>{reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>
         </Card>
 
         {/* QR Card */}

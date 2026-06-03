@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
-import { Plus, Search, PackageCheck, ShieldCheck, Clock, CheckCircle2, QrCode, Calendar, User, MapPin, Truck, AlertTriangle } from "lucide-react";
+import { Plus, Search, PackageCheck, ShieldCheck, Clock, CircleCheck as CheckCircle2, QrCode, Calendar, User, MapPin, Truck, TriangleAlert as AlertTriangle } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { useFarmers } from "@/store/farmers";
 import { useWarehouses } from "@/store/warehouses";
 import { useAuth } from "@/store/auth";
 import { useHouseholds } from "@/store/households";
+import { usePrograms } from "@/store/programs";
 import { format } from "date-fns";
 import type { Allocation, AllocationStatus } from "@/types";
 import { HierarchicalSelector, type HierarchicalSelection } from "@/components/forms/hierarchical-selector";
@@ -477,14 +478,17 @@ function NewAllocationDialog({
   onCreate: (d: Omit<Allocation, "id" | "allocationCode" | "allocationStatus" | "createdAt" | "qrCode">) => void;
 }) {
   const { inputs, warehouses } = useWarehouses();
+  const { programs, officers } = usePrograms();
   const user = useAuth((s) => s.user);
-  
+
   const [hierarchy, setHierarchy] = useState<HierarchicalSelection>({});
   const [inputId, setInputId] = useState("");
   const [warehouseId, setWarehouseId] = useState("");
   const [quantity, setQuantity] = useState(10);
   const [collectionDate, setCollectionDate] = useState("");
   const [notes, setNotes] = useState("");
+  const [programId, setProgramId] = useState("");
+  const [officerId, setOfficerId] = useState("");
 
   const selectedInput = inputs.find((i) => i.id === inputId);
 
@@ -497,6 +501,7 @@ function NewAllocationDialog({
       toast.error("Quantity exceeds available stock");
       return;
     }
+    const selectedProgram = programId ? programs.find((p) => p.id === programId) : undefined;
     onCreate({
       farmerId: hierarchy.farmerId!,
       householdId: hierarchy.householdId,
@@ -506,6 +511,12 @@ function NewAllocationDialog({
       collectionDate: new Date(collectionDate).toISOString(),
       notes: notes || undefined,
       createdBy: user?.id || "system",
+      programId: selectedProgram?.id,
+      programName: selectedProgram?.programName,
+      programCode: selectedProgram?.programCode,
+      fundingSource: selectedProgram?.fundingSource,
+      implementingPartner: selectedProgram?.implementingPartner,
+      assignedOfficerId: officerId || undefined,
     });
   };
 
@@ -559,6 +570,38 @@ function NewAllocationDialog({
           <div className="grid gap-1.5">
             <Label>Notes (optional)</Label>
             <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Add any additional notes..." rows={2} />
+          </div>
+
+          <div className="border-t pt-4 grid gap-4">
+            <h4 className="text-sm font-semibold">Program Participation (Optional)</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label className="text-sm">Program</Label>
+                <Select value={programId} onValueChange={setProgramId}>
+                  <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
+                  <SelectContent>
+                    {programs.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.programName} ({p.programCode})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label className="text-sm">Extension Officer</Label>
+                <Select value={officerId} onValueChange={setOfficerId}>
+                  <SelectTrigger><SelectValue placeholder="Select officer" /></SelectTrigger>
+                  <SelectContent>
+                    {officers.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
       </div>

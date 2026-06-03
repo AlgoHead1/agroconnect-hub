@@ -64,6 +64,9 @@ const livestockOptions: Livestock[] = [
   "Pigs",
 ];
 
+const irrigationOptions = ["None", "Rainfed", "Borehole", "River", "Dam", "Drip", "Pivot"];
+const landOwnershipOptions = ["Own", "Leased", "Communal", "Sharecrop", "Rented", "Inherited"];
+
 const schema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
@@ -79,9 +82,17 @@ const schema = z.object({
   householdId: z.string().optional(),
 
   farmSizeHa: z.coerce.number().min(0.01),
+  landOwnershipType: z.enum(["Own", "Leased", "Communal", "Sharecrop", "Rented", "Inherited"]).optional(),
+  irrigationAccess: z.enum(["None", "Rainfed", "Borehole", "River", "Dam", "Drip", "Pivot"]).optional(),
 
   gpsLat: z.string().optional(),
   gpsLng: z.string().optional(),
+
+  householdSize: z.coerce.number().optional(),
+  dependentsUnder18: z.coerce.number().optional(),
+  dependentsOver60: z.coerce.number().optional(),
+  femaleHeadedHousehold: z.boolean().optional(),
+  youthHeadedHousehold: z.boolean().optional(),
 
   crops: z.array(z.string()).min(1, "Select at least one crop"),
   livestock: z.array(z.string()).optional(),
@@ -121,9 +132,17 @@ function NewFarmerPage() {
       householdId: "",
 
       farmSizeHa: 1,
+      landOwnershipType: undefined,
+      irrigationAccess: undefined,
 
       gpsLat: "",
       gpsLng: "",
+
+      householdSize: undefined,
+      dependentsUnder18: undefined,
+      dependentsOver60: undefined,
+      femaleHeadedHousehold: false,
+      youthHeadedHousehold: false,
 
       crops: [],
       livestock: [],
@@ -412,6 +431,36 @@ function NewFarmerPage() {
               />
             </Field>
 
+            <Field label="Land Ownership Type (Optional)">
+              <Select onValueChange={(value) => setValue("landOwnershipType", value as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select ownership type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {landOwnershipOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field label="Irrigation Access (Optional)">
+              <Select onValueChange={(value) => setValue("irrigationAccess", value as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select irrigation type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {irrigationOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
             <Field label="GPS Latitude">
               <Input {...register("gpsLat")} />
             </Field>
@@ -419,6 +468,46 @@ function NewFarmerPage() {
             <Field label="GPS Longitude">
               <Input {...register("gpsLng")} />
             </Field>
+          </div>
+
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <Field label="Household Size (Optional)">
+              <Input
+                type="number"
+                min="1"
+                {...register("householdSize")}
+              />
+            </Field>
+
+            <Field label="Dependents Under 18 (Optional)">
+              <Input
+                type="number"
+                min="0"
+                {...register("dependentsUnder18")}
+              />
+            </Field>
+
+            <Field label="Dependents Over 60 (Optional)">
+              <Input
+                type="number"
+                min="0"
+                {...register("dependentsOver60")}
+              />
+            </Field>
+
+            <div className="space-y-4">
+              <Label>Household Characteristics (Optional)</Label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
+                  <Checkbox {...register("femaleHeadedHousehold")} />
+                  <span className="text-sm">Female-headed Household</span>
+                </label>
+                <label className="flex items-center gap-2 rounded-md border p-3 cursor-pointer hover:bg-muted/40">
+                  <Checkbox {...register("youthHeadedHousehold")} />
+                  <span className="text-sm">Youth-headed Household (18-35)</span>
+                </label>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
