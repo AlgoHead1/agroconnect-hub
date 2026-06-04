@@ -17,6 +17,7 @@ import { Route as AuthenticatedWarehousesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedLookupRouteImport } from './routes/_authenticated/lookup'
 import { Route as AuthenticatedHouseholdsRouteImport } from './routes/_authenticated/households'
 import { Route as AuthenticatedGisRouteImport } from './routes/_authenticated/gis'
 import { Route as AuthenticatedFarmersRouteImport } from './routes/_authenticated/farmers'
@@ -62,6 +63,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedLookupRoute = AuthenticatedLookupRouteImport.update({
+  id: '/lookup',
+  path: '/lookup',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedHouseholdsRoute = AuthenticatedHouseholdsRouteImport.update({
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/farmers': typeof AuthenticatedFarmersRouteWithChildren
   '/gis': typeof AuthenticatedGisRoute
   '/households': typeof AuthenticatedHouseholdsRoute
+  '/lookup': typeof AuthenticatedLookupRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/farmers': typeof AuthenticatedFarmersRouteWithChildren
   '/gis': typeof AuthenticatedGisRoute
   '/households': typeof AuthenticatedHouseholdsRoute
+  '/lookup': typeof AuthenticatedLookupRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/farmers': typeof AuthenticatedFarmersRouteWithChildren
   '/_authenticated/gis': typeof AuthenticatedGisRoute
   '/_authenticated/households': typeof AuthenticatedHouseholdsRoute
+  '/_authenticated/lookup': typeof AuthenticatedLookupRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/gis'
     | '/households'
+    | '/lookup'
     | '/reports'
     | '/settings'
     | '/users'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/farmers'
     | '/gis'
     | '/households'
+    | '/lookup'
     | '/reports'
     | '/settings'
     | '/users'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/farmers'
     | '/_authenticated/gis'
     | '/_authenticated/households'
+    | '/_authenticated/lookup'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
     | '/_authenticated/users'
@@ -269,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/lookup': {
+      id: '/_authenticated/lookup'
+      path: '/lookup'
+      fullPath: '/lookup'
+      preLoaderRoute: typeof AuthenticatedLookupRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/households': {
       id: '/_authenticated/households'
       path: '/households'
@@ -340,6 +359,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFarmersRoute: typeof AuthenticatedFarmersRouteWithChildren
   AuthenticatedGisRoute: typeof AuthenticatedGisRoute
   AuthenticatedHouseholdsRoute: typeof AuthenticatedHouseholdsRoute
+  AuthenticatedLookupRoute: typeof AuthenticatedLookupRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
@@ -352,6 +372,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFarmersRoute: AuthenticatedFarmersRouteWithChildren,
   AuthenticatedGisRoute: AuthenticatedGisRoute,
   AuthenticatedHouseholdsRoute: AuthenticatedHouseholdsRoute,
+  AuthenticatedLookupRoute: AuthenticatedLookupRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,

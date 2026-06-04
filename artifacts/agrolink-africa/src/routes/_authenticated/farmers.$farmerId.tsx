@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { QRCodeSVG } from "qrcode.react";
-import { ArrowLeft, Printer, Sprout, MapPin, Phone, IdCard, Calendar, Wheat, PackageCheck, QrCode, CircleCheck as CheckCircle2, Hop as Home, Users, Droplet, Award } from "lucide-react";
+import { ArrowLeft, Printer, Sprout, MapPin, Phone, IdCard, Calendar, Wheat, PackageCheck, QrCode, CircleCheck as CheckCircle2, Hop as Home, Users, Droplet, Award, FileText } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -288,6 +288,40 @@ function FarmerProfile() {
                     </li>
                   );
                 })}
+              </ul>
+            </Card>
+          )}
+
+          {receipts.length > 0 && (
+            <Card className="p-5">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-1.5"><FileText className="h-4 w-4 text-primary" />Receipts</h3>
+              <ul className="space-y-3">
+                {receipts.slice(0, 5).map((r) => (
+                  <li key={r.id} className="border-b border-border last:border-0 pb-3 last:pb-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-xs text-foreground">{r.receiptNumber}</p>
+                        <p className="text-xs text-primary font-medium mt-0.5">Code: {r.verificationCode}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(r.date), "dd MMM yyyy")} &middot; {r.items.length} item(s)
+                        </p>
+                        {r.items.map((item, i) => (
+                          <p key={i} className="text-xs text-muted-foreground ml-2">
+                            {item.inputName}: {item.quantity} {item.unit}
+                          </p>
+                        ))}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <Badge className={r.status === "Acknowledged"
+                          ? "text-[10px] font-normal bg-green-50 text-green-700 border-green-200"
+                          : "text-[10px] font-normal bg-yellow-50 text-yellow-700 border-yellow-200"
+                        } variant="outline">
+                          {r.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </li>
+                ))}
               </ul>
             </Card>
           )}

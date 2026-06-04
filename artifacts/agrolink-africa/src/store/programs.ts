@@ -23,6 +23,9 @@ interface ProgramsState {
   acknowledgeReceipt: (receiptId: string, acknowledgedBy: string, method: string, message?: string) => void;
   getReceiptsByFarmer: (farmerId: string) => Receipt[];
   getReceipt: (id: string) => Receipt | undefined;
+  getReceiptByVerificationCode: (code: string) => Receipt | undefined;
+  getReceiptByNumber: (number: string) => Receipt | undefined;
+  searchReceipts: (query: string) => Receipt[];
 
   // Officer methods
   addOfficer: (officer: Omit<ExtensionOfficer, "id">) => ExtensionOfficer;
@@ -32,6 +35,24 @@ interface ProgramsState {
 function pad(n: number, w: number) {
   return n.toString().padStart(w, "0");
 }
+
+function generateVerificationCode(): string {
+  const chars = "0123456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let code = "";
+  for (let i = 0; i < 5; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `RCPT-${code}`;
+}
+
+let programSeq = 3; // 3 seed programs
+let participationSeq = 0;
+let receiptSeq = 0;
+
+// Indexed lookup maps for O(1) receipt verification at scale
+const receiptById = new Map<string, Receipt>();
+const receiptByCode = new Map<string, Receipt>(); // verification code
+const receiptByNumber = new Map<string, Receipt>(); // receipt number
 
 export const usePrograms = create<ProgramsState>((set, get) => ({
   programs: [
@@ -88,9 +109,10 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
   ],
 
   addProgram: (data) => {
+    programSeq += 1;
     const program: Program = {
       ...data,
-      id: `prog-${get().programs.length + 1}`,
+      id: `prog-${programSeq}`,
     };
     set({ programs: [program, ...get().programs] });
     return program;
@@ -105,9 +127,10 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
   },
 
   enrollFarmer: (data) => {
+    participationSeq += 1;
     const participation: ProgramParticipation = {
       ...data,
-      id: `part-${get().participations.length + 1}`,
+      id: `part-${participationSeq}`,
       enrolledDate: new Date().toISOString(),
     };
     set({ participations: [participation, ...get().participations] });
@@ -127,10 +150,11 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
     get().participations.filter((p) => p.programId === programId),
 
   createReceipt: (farmerId, items, issuedBy) => {
-    const next = get().receipts.length + 1;
+    receiptSeq += 1;
     const receipt: Receipt = {
-      id: `rcpt-${next}`,
-      receiptNumber: `RCP-${new Date().getFullYear()}-${pad(next, 6)}`,
+      id: `rcpt-${receiptSeq}`,
+      receiptNumber: `RCP-${new Date().getFullYear()}-${pad(receiptSeq, 6)}`,
+      verificationCode: generateVerificationCode(),
       date: new Date().toISOString(),
       beneficiaryId: farmerId,
       items,
@@ -147,6 +171,9 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
       ],
       createdAt: new Date().toISOString(),
     };
+    receiptById.set(receipt.id, receipt);
+    receiptByCode.set(receipt.verificationCode.toUpperCase(), receipt);
+    receiptByNumber.set(receipt.receiptNumber.toUpperCase(), receipt);
     set({ receipts: [receipt, ...get().receipts] });
     return receipt;
   },
@@ -181,7 +208,25 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
 
   getReceiptsByFarmer: (farmerId) => get().receipts.filter((r) => r.beneficiaryId === farmerId),
 
-  getReceipt: (id) => get().receipts.find((r) => r.id === id),
+  getReceipt: (id) => receiptById.get(id),
+
+  getReceiptByVerificationCode: (code) => {
+    return receiptByCode.get(code.toUpperCase().trim());
+  },
+
+  getReceiptByNumber: (number) => {
+    return receiptByNumber.get(number.toUpperCase().trim());
+  },
+
+  searchReceipts: (query) => {
+    const q = query.toLowerCase().trim();
+    if (!q) return [];
+    return get().receipts.filter((r) =>
+      r.receiptNumber.toLowerCase().includes(q) ||
+      r.verificationCode.toLowerCase().includes(q) ||
+      r.beneficiaryId.toLowerCase().includes(q)
+    ).slice(0, 20);
+  },
 
   addOfficer: (data) => {
     const officer: ExtensionOfficer = {

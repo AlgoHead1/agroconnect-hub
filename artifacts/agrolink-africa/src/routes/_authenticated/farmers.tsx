@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Plus, Search, ChevronLeft, ChevronRight, Download, Users } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VulnerabilityTags } from "@/components/ui/vulnerability-tags";
+import { calculateEligibility, getEligibilityColor } from "@/lib/eligibility-rules";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useFarmers } from "@/store/farmers";
-import { provinces, districts, getProvince, getDistrict, getVillage } from "@/lib/zimbabwe-geo";
+import { usePrograms } from "@/store/programs";
+import { useDistributions } from "@/store/distributions";
+import { provinces, districts, getProvince, getDistrict, getWard, getVillage } from "@/lib/zimbabwe-geo";
 
 export const Route = createFileRoute("/_authenticated/farmers")({
   component: FarmersPage,
@@ -21,6 +24,9 @@ const PAGE_SIZE = 12;
 
 function FarmersPage() {
   const farmers = useFarmers((s) => s.farmers);
+  const searchBeneficiaries = useFarmers((s) => s.searchBeneficiaries);
+  const { programs, getParticipationsByProgram } = usePrograms();
+  const allocations = useDistributions((s) => s.allocations);
   const [q, setQ] = useState("");
   const [provinceId, setProvinceId] = useState<string>("all");
   const [districtId, setDistrictId] = useState<string>("all");
@@ -28,21 +34,47 @@ function FarmersPage() {
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
+    let result = farmers;
+
+    // Apply location/gender filters first (cheap)
+    if (provinceId !== "all") result = result.filter((f) => f.provinceId === provinceId);
+    if (districtId !== "all") result = result.filter((f) => f.districtId === districtId);
+    if (gender !== "all") result = result.filter((f) => f.gender === gender);
+
     const needle = q.trim().toLowerCase();
-    return farmers.filter((f) => {
-      if (provinceId !== "all" && f.provinceId !== provinceId) return false;
-      if (districtId !== "all" && f.districtId !== districtId) return false;
-      if (gender !== "all" && f.gender !== gender) return false;
-      if (!needle) return true;
+    if (!needle) return result;
+
+    // Check if query matches a program code/name — if so, find farmers in that program
+    const matchingProgram = programs.find(
+      (p) => p.programCode.toLowerCase().includes(needle) || p.programName.toLowerCase().includes(needle)
+    );
+    if (matchingProgram) {
+      const programFarmerIds = new Set(getParticipationsByProgram(matchingProgram.id).map((p) => p.farmerId));
+      const programAllocFarmerIds = new Set(
+        allocations.filter((a) => a.programId === matchingProgram.id).map((a) => a.farmerId)
+      );
+      const programIds = new Set([...programFarmerIds, ...programAllocFarmerIds]);
+      if (programIds.size > 0) {
+        return result.filter((f) => programIds.has(f.id));
+      }
+    }
+
+    // Standard multi-field search including village and ward names
+    return result.filter((f) => {
+      const village = getVillage(f.villageId);
+      const ward = getWard(f.wardId);
       return (
+        f.id.toLowerCase().includes(needle) ||
+        f.farmerCode.toLowerCase().includes(needle) ||
         f.firstName.toLowerCase().includes(needle) ||
         f.lastName.toLowerCase().includes(needle) ||
-        f.farmerCode.toLowerCase().includes(needle) ||
         f.nationalId.toLowerCase().includes(needle) ||
-        f.phone.includes(needle)
+        f.phone.includes(needle) ||
+        (village?.name.toLowerCase().includes(needle)) ||
+        (ward?.name.toLowerCase().includes(needle))
       );
     });
-  }, [farmers, q, provinceId, districtId, gender]);
+  }, [farmers, q, provinceId, districtId, gender, programs, getParticipationsByProgram, allocations]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -70,7 +102,7 @@ function FarmersPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name, farmer code, national ID or phone…"
+                placeholder="Search by name, ID, phone, village, ward, or program code…"
                 value={q}
                 onChange={(e) => { setQ(e.target.value); setPage(1); }}
                 className="pl-9"
@@ -110,11 +142,12 @@ function FarmersPage() {
                 <tr className="text-left text-xs uppercase tracking-wider">
                   <th className="px-5 py-3 font-medium">Farmer Code</th>
                   <th className="px-5 py-3 font-medium">Name</th>
-                  <th className="px-5 py-3 font-medium">Gender</th>
+                  <th className="px-5 py-3 font-medium">National ID</th>
                   <th className="px-5 py-3 font-medium">Phone</th>
                   <th className="px-5 py-3 font-medium">Province / District</th>
-                  <th className="px-5 py-3 font-medium">Vulnerability Tags</th>
-                  <th className="px-5 py-3 font-medium text-right">Farm Size</th>
+                  <th className="px-5 py-3 font-medium">Village</th>
+                  <th className="px-5 py-3 font-medium">Eligibility</th>
+                  <th className="px-5 py-3 font-medium">Latest Allocation</th>
                   <th className="px-5 py-3 font-medium">Crops</th>
                 </tr>
               </thead>
@@ -132,7 +165,7 @@ function FarmersPage() {
                         {!filtersApplied ? (
                           <p className="text-xs text-muted-foreground/70">Create a registration to begin building the farmer registry in your area.</p>
                         ) : (
-                          <p className="text-xs text-muted-foreground/70">Tip: clear filters or search by name, code, national ID or phone.</p>
+                          <p className="text-xs text-muted-foreground/70">Tip: search by name, ID, phone, village, ward, or program code.</p>
                         )}
                         <div className="flex items-center gap-2">
                           <Button size="sm" asChild><Link to="/farmers/new"><Plus className="h-4 w-4 mr-1.5" />Register Farmer</Link></Button>
@@ -144,36 +177,52 @@ function FarmersPage() {
                     </td>
                   </tr>
                 ) : (
-                  pageData.map((f) => (
-                    <tr key={f.id} className="border-t border-border hover:bg-muted/40">
-                      <td className="px-5 py-3 font-mono text-xs">
-                        <Link to="/farmers/$farmerId" params={{ farmerId: f.id }} className="text-primary hover:underline">
-                          {f.farmerCode}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3 font-medium text-foreground">{f.firstName} {f.lastName}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{f.gender === "M" ? "Male" : "Female"}</td>
-                      <td className="px-5 py-3 font-mono text-xs text-foreground">{f.phone}</td>
-                      <td className="px-5 py-3 text-foreground">
-                        {getProvince(f.provinceId)?.name}
-                        <p className="text-xs text-muted-foreground">{getDistrict(f.districtId)?.name}</p>
-                      </td>
-                      <td className="px-5 py-3">
-                        <VulnerabilityTags tags={f.vulnerabilityTags} compact />
-                      </td>
-                      <td className="px-5 py-3 text-right tabular-nums text-foreground">{f.farmSizeHa} ha</td>
-                      <td className="px-5 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {f.crops.slice(0, 2).map((c) => (
-                            <Badge key={c} variant="secondary" className="text-[10px] font-normal">{c}</Badge>
-                          ))}
-                          {f.crops.length > 2 && (
-                            <Badge variant="outline" className="text-[10px] font-normal">+{f.crops.length - 2}</Badge>
+                  pageData.map((f) => {
+                    const eligibility = calculateEligibility(f);
+                    const village = getVillage(f.villageId);
+                    const latestAlloc = allocations
+                      .filter((a) => a.farmerId === f.id)
+                      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+                    return (
+                      <tr key={f.id} className="border-t border-border hover:bg-muted/40">
+                        <td className="px-5 py-3 font-mono text-xs">
+                          <Link to="/farmers/$farmerId" params={{ farmerId: f.id }} className="text-primary hover:underline">
+                            {f.farmerCode}
+                          </Link>
+                        </td>
+                        <td className="px-5 py-3 font-medium text-foreground">{f.firstName} {f.lastName}</td>
+                        <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{f.nationalId}</td>
+                        <td className="px-5 py-3 font-mono text-xs text-foreground">{f.phone}</td>
+                        <td className="px-5 py-3 text-foreground">
+                          {getProvince(f.provinceId)?.name}
+                          <p className="text-xs text-muted-foreground">{getDistrict(f.districtId)?.name}</p>
+                        </td>
+                        <td className="px-5 py-3 text-foreground text-xs">{village?.name}</td>
+                        <td className="px-5 py-3">
+                          <Badge className={`text-[10px] font-normal ${eligibility.status === "Eligible" ? "bg-green-50 text-green-700 border-green-200" : eligibility.status === "Waitlisted" ? "bg-yellow-50 text-yellow-700 border-yellow-200" : "bg-red-50 text-red-700 border-red-200"}`} variant="outline">
+                            {eligibility.status}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3">
+                          {latestAlloc ? (
+                            <Badge variant="secondary" className="text-[10px] font-normal">{latestAlloc.allocationStatus}</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex flex-wrap gap-1">
+                            {f.crops.slice(0, 2).map((c) => (
+                              <Badge key={c} variant="secondary" className="text-[10px] font-normal">{c}</Badge>
+                            ))}
+                            {f.crops.length > 2 && (
+                              <Badge variant="outline" className="text-[10px] font-normal">+{f.crops.length - 2}</Badge>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

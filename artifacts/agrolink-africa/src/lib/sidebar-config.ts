@@ -3,7 +3,7 @@ import { canAccessModule } from "./roles";
 import {
   LayoutDashboard, Users, Home, PackageCheck, Warehouse as WhIcon,
   Map as MapIcon, BarChart3, UserCog, Settings, Sprout, LogOut,
-  Truck, Heart, User, Bell, FileText,
+  Truck, Heart, User, Bell, FileText, Search,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -29,6 +29,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Farmer Registry", url: "/farmers", icon: Users, requiredModule: "farmers" },
         { title: "Households", url: "/households", icon: Home, requiredModule: "households" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
@@ -55,6 +56,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Farmer Registry", url: "/farmers", icon: Users, requiredModule: "farmers" },
         { title: "Households", url: "/households", icon: Home, requiredModule: "households" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
@@ -81,6 +83,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Farmer Registry", url: "/farmers", icon: Users, requiredModule: "farmers" },
         { title: "Households", url: "/households", icon: Home, requiredModule: "households" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
@@ -107,6 +110,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Farmer Registry", url: "/farmers", icon: Users, requiredModule: "farmers" },
         { title: "Households", url: "/households", icon: Home, requiredModule: "households" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
@@ -126,6 +130,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Farmer Registry", url: "/farmers", icon: Users, requiredModule: "farmers" },
         { title: "Households", url: "/households", icon: Home, requiredModule: "households" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
@@ -143,6 +148,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Farmer Registry", url: "/farmers", icon: Users, requiredModule: "farmers" },
         { title: "Households", url: "/households", icon: Home, requiredModule: "households" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
@@ -161,6 +167,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Operations",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Warehouses", url: "/warehouses", icon: WhIcon, requiredModule: "warehouses" },
         { title: "Distributions", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
       ],
@@ -183,6 +190,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       label: "Overview",
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
       ],
     },
     {
@@ -215,6 +223,7 @@ export const SIDEBAR_CONFIG: Record<UserRole, SidebarGroup[]> = {
       items: [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredModule: "dashboard" },
         { title: "My Profile", url: "/farmers", icon: User, requiredModule: "farmers" },
+        { title: "Beneficiary Lookup", url: "/lookup", icon: Search, requiredModule: "farmers" },
         { title: "Allocations", url: "/distributions", icon: PackageCheck, requiredModule: "distributions" },
         { title: "Notifications", url: "/settings", icon: Bell, requiredModule: "settings" },
       ],

@@ -244,6 +244,7 @@ export interface ProgramParticipation {
 export interface Receipt {
   id: string;
   receiptNumber: string; // Format: RCP-YYYY-XXXXXX
+  verificationCode: string; // Format: RCPT-XXXXX - immutable, for dispute resolution
   date: string; // ISO
   beneficiaryId: string; // Farmer ID
   programId?: string;
