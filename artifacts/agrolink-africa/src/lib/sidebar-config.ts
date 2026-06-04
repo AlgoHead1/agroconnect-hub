@@ -1,10 +1,6 @@
 import type { UserRole } from "@/types";
 import { canAccessModule } from "./roles";
-import {
-  LayoutDashboard, Users, Home, PackageCheck, Warehouse as WhIcon,
-  Map as MapIcon, BarChart3, UserCog, Settings, Sprout, LogOut,
-  Truck, Heart, User, Bell, FileText, Search,
-} from "lucide-react";
+import { LayoutDashboard, Users, Hop as Home, PackageCheck, Warehouse as WhIcon, Map as MapIcon, ChartBar as BarChart3, UserCog, Settings, Sprout, LogOut, Truck, Heart, User, Bell, FileText, Search } from "lucide-react";
 
 export interface SidebarItem {
   title: string;

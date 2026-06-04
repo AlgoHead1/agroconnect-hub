@@ -45,7 +45,7 @@ function generateVerificationCode(): string {
   return `RCPT-${code}`;
 }
 
-let programSeq = 3; // 3 seed programs
+let programSeq = 4; // 4 seed programs
 let participationSeq = 0;
 let receiptSeq = 0;
 
@@ -66,6 +66,7 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
       endDate: new Date(2026, 11, 31).toISOString(),
       season: "2026 Summer",
       status: "Active",
+      commodityType: "Maize",
     },
     {
       id: "prog-2",
@@ -77,6 +78,7 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
       endDate: new Date(2026, 3, 30).toISOString(),
       season: "2026 Summer",
       status: "Active",
+      commodityType: "Maize",
     },
     {
       id: "prog-3",
@@ -87,6 +89,19 @@ export const usePrograms = create<ProgramsState>((set, get) => ({
       startDate: new Date(2026, 3, 1).toISOString(),
       season: "2026",
       status: "Active",
+      commodityType: "Cotton",
+    },
+    {
+      id: "prog-4",
+      programName: "Tobacco Sustainability Programme",
+      programCode: "TSP-26",
+      fundingSource: "Industry",
+      implementingPartner: "TIMB",
+      startDate: new Date(2026, 0, 1).toISOString(),
+      endDate: new Date(2026, 11, 31).toISOString(),
+      season: "2026",
+      status: "Active",
+      commodityType: "Tobacco",
     },
   ],
   participations: [],

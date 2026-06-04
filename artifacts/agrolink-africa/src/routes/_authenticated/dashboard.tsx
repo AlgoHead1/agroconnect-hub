@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Home, PackageCheck, MapPin, Sprout, AlertCircle, Plus, Truck, QrCode, Calendar, TrendingUp, FileText, Package } from "lucide-react";
+import { Users, Hop as Home, PackageCheck, MapPin, Sprout, CircleAlert as AlertCircle, Plus, Truck, QrCode, Calendar, TrendingUp, FileText, Package, Leaf, TreePine, Flame, ShieldCheck } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line,
@@ -13,6 +13,7 @@ import { useFarmers } from "@/store/farmers";
 import { useAuth } from "@/store/auth";
 import { useDistributions } from "@/store/distributions";
 import { useWarehouses } from "@/store/warehouses";
+import { useSustainability } from "@/store/sustainability";
 import { households, distributions, inputItems } from "@/lib/mock-data";
 import { provinces, districts, villages, getProvince, getDistrict } from "@/lib/zimbabwe-geo";
 import { useMemo } from "react";
@@ -31,6 +32,31 @@ function Dashboard() {
   if (!user) return null;
   const warehouses = useWarehouses((s) => s.warehouses);
   const inputs = useWarehouses((s) => s.inputs);
+  const sustainability = useSustainability();
+
+  const sustainabilityMetrics = useMemo(() => {
+    const { productionProfiles, fuelRecords, woodlots, labourRecords, childLabourRecords } = sustainability;
+    const altFuelTypes = ["Biochar Briquettes", "Sawdust Briquettes", "Corn Cob Briquettes", "Cotton Stalk Briquettes", "Macadamia Shells", "Solar Assisted"];
+    const altFuelQty = fuelRecords.filter((f) => altFuelTypes.includes(f.fuelType)).reduce((s, f) => s + f.quantity, 0);
+    const totalFuelQty = fuelRecords.reduce((s, f) => s + f.quantity, 0) || 1;
+    return {
+      totalFarmers: new Set(productionProfiles.map((p) => p.farmerId)).size,
+      totalWoodlots: woodlots.length,
+      totalTrees: woodlots.reduce((s, w) => s + w.treesPlanted, 0),
+      survivingTrees: woodlots.reduce((s, w) => s + w.treesSurviving, 0),
+      altFuelPct: ((altFuelQty / totalFuelQty) * 100).toFixed(0),
+      labourCompliance: labourRecords.length > 0
+        ? Math.round((labourRecords.filter((l) => l.complianceStatus === "Compliant").length / labourRecords.length) * 100)
+        : 0,
+      childLabourCompliance: childLabourRecords.length > 0
+        ? Math.round((childLabourRecords.filter((c) => c.complianceStatus === "Compliant").length / childLabourRecords.length) * 100)
+        : 0,
+    };
+  }, [sustainability]);
+
+  const showSustainability = user?.role === "super_admin" || user?.role === "national_admin"
+    || user?.role === "provincial_admin" || user?.role === "district_officer"
+    || user?.role === "ngo_partner" || user?.role === "extension_officer";
 
   const stats = useMemo(() => {
     const activeDistricts = new Set(farmers.map((f) => f.districtId)).size;
@@ -157,6 +183,58 @@ function Dashboard() {
             );
           })}
         </div>
+
+        {/* Sustainability KPI Cards - for relevant roles */}
+        {showSustainability && (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Leaf className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Sustainability Farmers</p>
+                  <p className="text-2xl font-semibold tabular-nums">{sustainabilityMetrics.totalFarmers}</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 text-green-700">
+                  <TreePine className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Trees Planted</p>
+                  <p className="text-2xl font-semibold tabular-nums">{sustainabilityMetrics.totalTrees.toLocaleString()}</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{sustainabilityMetrics.survivingTrees.toLocaleString()} surviving · {sustainabilityMetrics.totalWoodlots} woodlots</p>
+            </Card>
+            <Card className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-50 text-yellow-700">
+                  <Flame className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Alt. Fuel Adoption</p>
+                  <p className="text-2xl font-semibold tabular-nums">{sustainabilityMetrics.altFuelPct}%</p>
+                </div>
+              </div>
+            </Card>
+            <Card className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Labour Compliance</p>
+                  <p className="text-2xl font-semibold tabular-nums">{sustainabilityMetrics.labourCompliance}%</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Child labour: {sustainabilityMetrics.childLabourCompliance}% compliant</p>
+            </Card>
+          </div>
+        )}
 
         {/* Charts row 1 */}
         <div className="grid gap-4 lg:grid-cols-3">

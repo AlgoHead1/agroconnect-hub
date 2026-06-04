@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState, useCallback } from "react";
-import { Search, FileText, QrCode, CheckCircle2, XCircle, ArrowRight, User } from "lucide-react";
+import { Search, FileText, QrCode, CircleCheck as CheckCircle2, Circle as XCircle, ArrowRight, User } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useFarmers } from "@/store/farmers";
 import { usePrograms } from "@/store/programs";
@@ -13,7 +14,7 @@ import { useDistributions } from "@/store/distributions";
 import { calculateEligibility, getEligibilityColor } from "@/lib/eligibility-rules";
 import { getProvince, getDistrict, getWard, getVillage } from "@/lib/zimbabwe-geo";
 import { format } from "date-fns";
-import type { Receipt } from "@/types";
+import type { Receipt, CommodityType } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/lookup")({
   component: LookupPage,
@@ -49,6 +50,7 @@ function LookupPage() {
 
 function BeneficiarySearch() {
   const [q, setQ] = useState("");
+  const [commodityType, setCommodityType] = useState<string>("all");
   const farmers = useFarmers((s) => s.farmers);
   const searchBeneficiaries = useFarmers((s) => s.searchBeneficiaries);
   const allocations = useDistributions((s) => s.allocations);
@@ -56,21 +58,45 @@ function BeneficiarySearch() {
   const { getReceiptsByFarmer } = usePrograms();
 
   const results = useMemo(() => {
-    if (!q.trim()) return [];
-    return searchBeneficiaries(q);
-  }, [q, searchBeneficiaries]);
+    let list = q.trim() ? searchBeneficiaries(q) : [];
+    if (commodityType !== "all" && list.length > 0) {
+      const ct = commodityType as CommodityType;
+      list = list.filter((f) => {
+        if (f.crops.includes(ct as any)) return true;
+        const farmerProgramIds = new Set(
+          allocations.filter((a) => a.farmerId === f.id && a.programId).map((a) => a.programId!)
+        );
+        return programs.some((p) => farmerProgramIds.has(p.id) && p.commodityType === ct);
+      });
+    }
+    return list;
+  }, [q, searchBeneficiaries, commodityType, allocations, programs]);
 
   return (
     <div className="space-y-4">
       <Card className="p-4">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Enter Farmer ID, National ID, phone, village, or ward…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Enter Farmer ID, National ID, phone, village, or ward…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={commodityType} onValueChange={setCommodityType}>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Commodity" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All commodities</SelectItem>
+              <SelectItem value="Tobacco">Tobacco</SelectItem>
+              <SelectItem value="Cotton">Cotton</SelectItem>
+              <SelectItem value="Maize">Maize</SelectItem>
+              <SelectItem value="Soybean">Soybean</SelectItem>
+              <SelectItem value="Horticulture">Horticulture</SelectItem>
+              <SelectItem value="Livestock">Livestock</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </Card>
 

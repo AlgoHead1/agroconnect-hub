@@ -15,6 +15,7 @@ import { useFarmers } from "@/store/farmers";
 import { usePrograms } from "@/store/programs";
 import { useDistributions } from "@/store/distributions";
 import { provinces, districts, getProvince, getDistrict, getWard, getVillage } from "@/lib/zimbabwe-geo";
+import type { CommodityType } from "@/types";
 
 export const Route = createFileRoute("/_authenticated/farmers")({
   component: FarmersPage,
@@ -31,15 +32,26 @@ function FarmersPage() {
   const [provinceId, setProvinceId] = useState<string>("all");
   const [districtId, setDistrictId] = useState<string>("all");
   const [gender, setGender] = useState<string>("all");
+  const [commodityType, setCommodityType] = useState<string>("all");
   const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let result = farmers;
 
-    // Apply location/gender filters first (cheap)
+    // Apply location/gender/commodity filters first (cheap)
     if (provinceId !== "all") result = result.filter((f) => f.provinceId === provinceId);
     if (districtId !== "all") result = result.filter((f) => f.districtId === districtId);
     if (gender !== "all") result = result.filter((f) => f.gender === gender);
+    if (commodityType !== "all") {
+      const ct = commodityType as CommodityType;
+      result = result.filter((f) => {
+        if (f.crops.includes(ct as any)) return true;
+        const farmerProgramIds = new Set(
+          allocations.filter((a) => a.farmerId === f.id && a.programId).map((a) => a.programId!)
+        );
+        return programs.some((p) => farmerProgramIds.has(p.id) && p.commodityType === ct);
+      });
+    }
 
     const needle = q.trim().toLowerCase();
     if (!needle) return result;
@@ -74,13 +86,13 @@ function FarmersPage() {
         (ward?.name.toLowerCase().includes(needle))
       );
     });
-  }, [farmers, q, provinceId, districtId, gender, programs, getParticipationsByProgram, allocations]);
+  }, [farmers, q, provinceId, districtId, gender, commodityType, programs, getParticipationsByProgram, allocations]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageData = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const districtOptions = provinceId === "all" ? districts : districts.filter((d) => d.provinceId === provinceId);
-  const filtersApplied = q.trim().length > 0 || provinceId !== "all" || districtId !== "all" || gender !== "all";
+  const filtersApplied = q.trim().length > 0 || provinceId !== "all" || districtId !== "all" || gender !== "all" || commodityType !== "all";
 
   return (
     <div className="flex flex-col">
@@ -131,6 +143,19 @@ function FarmersPage() {
                   <SelectItem value="F">Female</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={commodityType} onValueChange={(v) => { setCommodityType(v); setPage(1); }}>
+                <SelectTrigger className="w-full lg:w-40"><SelectValue placeholder="Commodity" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All commodities</SelectItem>
+                  <SelectItem value="Tobacco">Tobacco</SelectItem>
+                  <SelectItem value="Cotton">Cotton</SelectItem>
+                  <SelectItem value="Maize">Maize</SelectItem>
+                  <SelectItem value="Soybean">Soybean</SelectItem>
+                  <SelectItem value="Groundnuts">Groundnuts</SelectItem>
+                  <SelectItem value="Horticulture">Horticulture</SelectItem>
+                  <SelectItem value="Livestock">Livestock</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </Card>
@@ -169,7 +194,7 @@ function FarmersPage() {
                         )}
                         <div className="flex items-center gap-2">
                           <Button size="sm" asChild><Link to="/farmers/new"><Plus className="h-4 w-4 mr-1.5" />Register Farmer</Link></Button>
-                          <Button size="sm" variant="outline" onClick={() => { setProvinceId("all"); setDistrictId("all"); setGender("all"); setQ(""); }}>
+                          <Button size="sm" variant="outline" onClick={() => { setProvinceId("all"); setDistrictId("all"); setGender("all"); setCommodityType("all"); setQ(""); }}>
                             Clear filters
                           </Button>
                         </div>

@@ -39,6 +39,18 @@ export type VulnerabilityTag =
 export type IrrigationAccess = "None" | "Rainfed" | "Borehole" | "River" | "Dam" | "Drip" | "Pivot";
 export type LandOwnershipType = "Own" | "Leased" | "Communal" | "Sharecrop" | "Rented" | "Inherited";
 
+// Commodity type for program classification and sustainability feature flags
+export type CommodityType = "Maize" | "Cotton" | "Tobacco" | "Soybean" | "Groundnuts" | "Horticulture" | "Livestock" | "Other";
+
+// Sustainability fuel types
+export type FuelType = "Wood Fuel" | "Coal" | "Biochar Briquettes" | "Sawdust Briquettes" | "Corn Cob Briquettes" | "Cotton Stalk Briquettes" | "Macadamia Shells" | "Solar Assisted" | "Other";
+
+// Sustainability compliance status
+export type SustainabilityComplianceStatus = "Compliant" | "Partially Compliant" | "High Risk" | "Not Assessed";
+
+// Child labour risk levels
+export type ChildLabourRisk = "Low" | "Medium" | "High";
+
 export interface Farmer {
   id: string;
   farmerCode: string; // FARM-ZW-XXXXXX
@@ -212,6 +224,8 @@ export interface Program {
   endDate?: string; // ISO
   season?: string;
   status?: "Active" | "Completed" | "Paused";
+  commodityType?: CommodityType;
+  otherCommodityDescription?: string; // When commodityType = "Other"
 }
 
 export interface ExtensionOfficer {
@@ -235,6 +249,8 @@ export interface ProgramParticipation {
   startDate?: string; // ISO
   endDate?: string; // ISO
   season?: string;
+  commodityType?: CommodityType;
+  contractor?: string; // For tobacco and other contract crops
   eligibilityStatus: EligibilityStatus;
   eligibilityScore?: number; // 0-100, optional computed score
   enrolledDate: string; // ISO
@@ -279,4 +295,152 @@ export interface ReceiptAuditEntry {
   userName?: string;
   timestamp: string;
   notes?: string;
+}
+
+// ============================================================
+// Generic Sustainability Framework (commodity-driven, not Tobacco-only)
+// ============================================================
+
+// Section 1: Commodity Production Profile (e.g., Tobacco Production Profile)
+export interface CommodityProductionProfile {
+  id: string;
+  farmerId: string;
+  commodityType: CommodityType;
+  areaHa: number;
+  contractor?: string;
+  expectedYieldKg?: number;
+  actualYieldKg?: number;
+  grade?: string;
+  numberOfBales?: number;
+  marketingSeason?: string;
+  contractStatus?: "Active" | "Completed" | "Cancelled" | "None";
+  recordedAt: string;
+}
+
+// Section 2: Fuel Usage Record
+export interface FuelUsageRecord {
+  id: string;
+  farmerId: string;
+  fuelType: FuelType;
+  quantity: number;
+  unit: string; // kg, tonnes, bundles
+  dateUsed: string; // ISO
+  source?: string;
+  verifiedBy?: string;
+  recordedAt: string;
+}
+
+// Section 3: Woodlot Record
+export interface WoodlotRecord {
+  id: string;
+  farmerId: string;
+  woodlotCode: string;
+  areaHa: number;
+  treeSpecies: string;
+  treesPlanted: number;
+  treesSurviving: number;
+  plantingDate: string; // ISO
+  estimatedFuelYieldTonnes?: number;
+  verificationDate?: string; // ISO
+  verifier?: string;
+  provinceId: string;
+  districtId: string;
+  wardId: string;
+  villageId: string;
+  gpsLat?: number;
+  gpsLng?: number;
+  recordedAt: string;
+}
+
+// Section 4: Labour Compliance Record
+export interface LabourComplianceRecord {
+  id: string;
+  farmerId: string;
+  permanentWorkers: number;
+  seasonalWorkers: number;
+  youthWorkers: number;
+  ppeAvailable: boolean;
+  labourDeclarationSigned: boolean;
+  complianceStatus: SustainabilityComplianceStatus;
+  recordedAt: string;
+}
+
+// Section 5: Child Labour Safeguard Record
+export interface ChildLabourSafeguardRecord {
+  id: string;
+  farmerId: string;
+  childLabourRisk: ChildLabourRisk;
+  trainingCompleted: boolean;
+  trainingDate?: string; // ISO
+  followUpDate?: string; // ISO
+  complianceStatus: SustainabilityComplianceStatus;
+  comments?: string;
+  recordedAt: string;
+}
+
+// Section 6: Sustainability Scorecard
+export interface SustainabilityScorecard {
+  id: string;
+  farmerId: string;
+  commodityType: CommodityType;
+  programId?: string;
+  environmentalScore: number; // 0-100
+  socialScore: number; // 0-100
+  complianceScore: number; // 0-100
+  overallScore: number; // Weighted average 0-100
+  overallRating: SustainabilityComplianceStatus;
+  calculatedAt: string;
+  // Scoring breakdown
+  woodlotCoverage?: number; // 0-100
+  alternativeFuelUsage?: number; // 0-100
+  fuelEfficiency?: number; // 0-100
+  labourComplianceScore?: number; // 0-100
+  trainingScore?: number; // 0-100
+  childLabourSafeguardScore?: number; // 0-100
+  profileCompleteness?: number; // 0-100
+  verificationStatus?: number; // 0-100
+  programParticipationScore?: number; // 0-100
+}
+
+// Section 7: Sustainability Passport
+export interface SustainabilityPassport {
+  farmerId: string;
+  farmerCode: string;
+  commodityType: CommodityType;
+  programName?: string;
+  programCode?: string;
+  // Production
+  productionProfile?: CommodityProductionProfile;
+  // Woodlot
+  woodlots: WoodlotRecord[];
+  totalTreesPlanted: number;
+  totalTreesSurviving: number;
+  totalWoodlotAreaHa: number;
+  // Fuel
+  fuelRecords: FuelUsageRecord[];
+  alternativeFuelPercentage: number; // 0-100
+  primaryFuelType: FuelType;
+  // Labour
+  labourCompliance?: LabourComplianceRecord;
+  // Child Labour
+  childLabourSafeguard?: ChildLabourSafeguardRecord;
+  // Scores
+  scorecard?: SustainabilityScorecard;
+  // Verification
+  lastVerificationDate?: string;
+  verificationOfficer?: string;
+  evidenceAvailable: boolean;
+  verificationComments?: string;
+}
+
+// Evidence & Verification placeholder
+export interface VerificationRecord {
+  id: string;
+  farmerId: string;
+  verificationDate: string;
+  verificationOfficer: string;
+  evidenceAvailable: boolean;
+  comments?: string;
+  commodityType: CommodityType;
+  recordedAt: string;
 }
