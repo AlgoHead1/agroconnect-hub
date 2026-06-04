@@ -498,6 +498,3 @@ export const useSustainability = create<SustainabilityState>((set, get) => ({
       || programCommodityTypes.some((ct) => sustainabilityCommodities.includes(ct));
   },
 }));
-
-
-export { useSustainability }
