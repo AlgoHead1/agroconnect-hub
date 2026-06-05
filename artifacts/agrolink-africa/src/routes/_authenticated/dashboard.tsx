@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Hop as Home, PackageCheck, MapPin, Sprout, CircleAlert as AlertCircle, Plus, Truck, QrCode, Calendar, TrendingUp, FileText, Package, Leaf, TreePine, Flame, ShieldCheck } from "lucide-react";
+import { Users, Hop as Home, PackageCheck, MapPin, Sprout, CircleAlert as AlertCircle, Plus, Truck, QrCode, Calendar, TrendingUp, FileText, Package, Leaf, TreePine, Flame, ShieldCheck, Activity, Warehouse, Receipt, ClipboardList } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line,
@@ -10,10 +10,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useFarmers } from "@/store/farmers";
-import { useAuth } from "@/store/auth";
+import { useAuth, DEMO_USER_LIST } from "@/store/auth";
 import { useDistributions } from "@/store/distributions";
 import { useWarehouses } from "@/store/warehouses";
 import { useSustainability } from "@/store/sustainability";
+import { usePrograms } from "@/store/programs";
 import { households, distributions, inputItems } from "@/lib/mock-data";
 import { provinces, districts, villages, getProvince, getDistrict } from "@/lib/zimbabwe-geo";
 import { useMemo } from "react";
@@ -28,6 +29,8 @@ function Dashboard() {
   const user = useAuth((s) => s.user);
   const hasPermission = useAuth((s) => s.hasPermission);
   const allocations = useDistributions((s) => s.allocations);
+  const programs = usePrograms((s) => s.programs);
+  const receipts = usePrograms((s) => s.receipts);
 
   if (!user) return null;
   const warehouses = useWarehouses((s) => s.warehouses);
@@ -57,6 +60,20 @@ function Dashboard() {
   const showSustainability = user?.role === "super_admin" || user?.role === "national_admin"
     || user?.role === "provincial_admin" || user?.role === "district_officer"
     || user?.role === "ngo_partner" || user?.role === "extension_officer";
+
+  const isAdminRole = user?.role === "super_admin" || user?.role === "national_admin";
+
+  const systemHealth = useMemo(() => {
+    if (!isAdminRole) return null;
+    return {
+      farmersRegistered: farmers.length,
+      activePrograms: programs.filter((p) => p.status === "Active").length,
+      pendingAllocations: allocations.filter((a) => a.allocationStatus === "pending").length,
+      pendingApprovals: allocations.filter((a) => a.allocationStatus === "pending" || a.allocationStatus === "approved").length,
+      warehouseCount: warehouses.length,
+      receiptsGenerated: receipts.length,
+    };
+  }, [isAdminRole, farmers.length, programs, allocations, warehouses.length, receipts.length]);
 
   const stats = useMemo(() => {
     const activeDistricts = new Set(farmers.map((f) => f.districtId)).size;
@@ -127,12 +144,81 @@ function Dashboard() {
     [allocations],
   );
 
-  const farmerAllocations = useMemo(() => 
+  const farmerAllocations = useMemo(() =>
     user?.role === "farmer" && user.id
       ? allocations.filter((a) => a.farmerId === user.id).slice(0, 6)
       : [],
     [allocations, user]
   );
+
+  const events = useDistributions((s) => s.events);
+
+  const activityFeed = useMemo(() => {
+    if (!isAdminRole) return [];
+    type FeedItem = { id: string; label: string; detail: string; timestamp: string; userId: string };
+    const items: FeedItem[] = [];
+
+    // Distribution events → activity entries
+    events.forEach((e) => {
+      const allocation = allocations.find((a) => a.id === e.allocationId);
+      const farmer = allocation ? farmers.find((f) => f.id === allocation.farmerId) : undefined;
+      const farmerName = farmer ? `${farmer.firstName} ${farmer.lastName}` : allocation?.allocationCode ?? "—";
+      const labels: Record<string, string> = {
+        created: "Allocation Created",
+        approved: "Allocation Approved",
+        distributed: "Allocation Issued",
+        collected: "Receipt Acknowledged",
+        cancelled: "Allocation Cancelled",
+      };
+      items.push({
+        id: e.id,
+        label: labels[e.eventType] ?? e.eventType,
+        detail: farmerName,
+        timestamp: e.timestamp,
+        userId: e.userId,
+      });
+    });
+
+    // Recently registered farmers
+    [...farmers]
+      .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
+      .slice(0, 5)
+      .forEach((f) => {
+        items.push({
+          id: `reg-${f.id}`,
+          label: "Farmer Registered",
+          detail: `${f.firstName} ${f.lastName} · ${f.farmerCode}`,
+          timestamp: f.registeredAt,
+          userId: f.registeredBy,
+        });
+      });
+
+    // Receipt events
+    receipts.forEach((r) => {
+      const beneficiary = farmers.find((f) => f.id === r.beneficiaryId);
+      const name = beneficiary ? `${beneficiary.firstName} ${beneficiary.lastName}` : r.receiptNumber;
+      items.push({
+        id: `rcpt-${r.id}`,
+        label: "Receipt Generated",
+        detail: `${name} · ${r.receiptNumber}`,
+        timestamp: r.createdAt,
+        userId: r.issuedBy,
+      });
+      if (r.acknowledgementData) {
+        items.push({
+          id: `ack-${r.id}`,
+          label: "Receipt Acknowledged",
+          detail: `${name} · ${r.receiptNumber}`,
+          timestamp: r.acknowledgementData.acknowledgedAt,
+          userId: r.acknowledgementData.acknowledgedBy,
+        });
+      }
+    });
+
+    return items
+      .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+      .slice(0, 20);
+  }, [isAdminRole, events, allocations, farmers, receipts]);
 
   return (
     <div className="flex flex-col">
@@ -183,6 +269,57 @@ function Dashboard() {
             );
           })}
         </div>
+
+        {/* System Health — Admin only */}
+        {systemHealth && (
+          <div className="space-y-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground px-1">System Health</h3>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+              <Card className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0"><Users className="h-4 w-4" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Farmers Registered</p>
+                  <p className="text-xl font-semibold tabular-nums">{systemHealth.farmersRegistered.toLocaleString()}</p>
+                </div>
+              </Card>
+              <Card className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-700 shrink-0"><Activity className="h-4 w-4" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Programs Active</p>
+                  <p className="text-xl font-semibold tabular-nums">{systemHealth.activePrograms}</p>
+                </div>
+              </Card>
+              <Card className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-50 text-yellow-700 shrink-0"><ClipboardList className="h-4 w-4" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Pending Allocations</p>
+                  <p className="text-xl font-semibold tabular-nums">{systemHealth.pendingAllocations}</p>
+                </div>
+              </Card>
+              <Card className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-700 shrink-0"><AlertCircle className="h-4 w-4" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Pending Approvals</p>
+                  <p className="text-xl font-semibold tabular-nums">{systemHealth.pendingApprovals}</p>
+                </div>
+              </Card>
+              <Card className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700 shrink-0"><Warehouse className="h-4 w-4" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Warehouses</p>
+                  <p className="text-xl font-semibold tabular-nums">{systemHealth.warehouseCount}</p>
+                </div>
+              </Card>
+              <Card className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-50 text-purple-700 shrink-0"><Receipt className="h-4 w-4" /></div>
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">Receipts Generated</p>
+                  <p className="text-xl font-semibold tabular-nums">{systemHealth.receiptsGenerated}</p>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
 
         {/* Sustainability KPI Cards - for relevant roles */}
         {showSustainability && (
@@ -554,6 +691,44 @@ function Dashboard() {
             </div>
           </Card>
         </div>
+        {/* Activity Feed — Admin only */}
+        {isAdminRole && activityFeed.length > 0 && (
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <ChartHeader title="Activity Feed" subtitle="Recent system events — registrations, approvals, receipts" />
+            </div>
+            <ul className="divide-y divide-border max-h-96 overflow-y-auto">
+              {activityFeed.map((item) => {
+                const u = DEMO_USER_LIST.find((x) => x.id === item.userId);
+                const eventIcons: Record<string, string> = {
+                  "Farmer Registered": "🌱",
+                  "Allocation Created": "📋",
+                  "Allocation Approved": "✅",
+                  "Allocation Issued": "🚚",
+                  "Receipt Generated": "🧾",
+                  "Receipt Acknowledged": "📬",
+                  "Allocation Cancelled": "❌",
+                };
+                const icon = eventIcons[item.label] ?? "•";
+                return (
+                  <li key={item.id} className="px-5 py-3 flex items-start gap-3 hover:bg-muted/40">
+                    <span className="text-base mt-0.5 shrink-0">{icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium text-foreground">{item.label}</p>
+                        <time className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
+                          {new Date(item.timestamp).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                        </time>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">{item.detail}</p>
+                      {u && <p className="text-[10px] text-muted-foreground/70 mt-0.5">by {u.fullName}</p>}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        )}
       </div>
     </div>
   );
